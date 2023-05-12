@@ -43,8 +43,7 @@ const (
 )
 
 func addValueOptionsFlags(f *pflag.FlagSet, v *values.Options) {
-	f.StringSliceVarP(&v.ValueFiles, "values", "f", []string{}, "specify values in a YAML file or a URL (can specify multiple)")
-	f.StringSliceVarP(&v.ValuesDirectories, "values-directory", "d", []string{}, "specify values directory with YAML files which is read recursively (can specify multiple)")
+	f.StringSliceVarP(&v.ValueFiles, "values", "f", []string{}, "specify values in a YAML file, a URL or a directory (can specify multiple) if the parameter is a directory, reads YAML files contained recursively")
 	f.StringArrayVar(&v.Values, "set", []string{}, "set values on the command line (can specify multiple or separate values with commas: key1=val1,key2=val2)")
 	f.StringArrayVar(&v.StringValues, "set-string", []string{}, "set STRING values on the command line (can specify multiple or separate values with commas: key1=val1,key2=val2)")
 	f.StringArrayVar(&v.FileValues, "set-file", []string{}, "set values from respective files specified via the command line (can specify multiple or separate values with commas: key1=path1,key2=path2)")

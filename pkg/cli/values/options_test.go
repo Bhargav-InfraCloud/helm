@@ -137,12 +137,11 @@ func TestOptions_MergeValues(t *testing.T) {
 		{
 			name: "Empty-Values",
 			opts: Options{
-				ValueFiles:        []string{},
-				ValuesDirectories: []string{},
-				StringValues:      []string{},
-				Values:            []string{},
-				FileValues:        []string{},
-				JSONValues:        []string{},
+				ValueFiles:   []string{},
+				StringValues: []string{},
+				Values:       []string{},
+				FileValues:   []string{},
+				JSONValues:   []string{},
 			},
 			args: args{
 				p: []getter.Provider{},
@@ -157,11 +156,10 @@ func TestOptions_MergeValues(t *testing.T) {
 					"testdata/noconflicts/values.yaml",
 					"testdata/noconflicts/extras.yaml",
 				},
-				ValuesDirectories: []string{},
-				StringValues:      []string{},
-				Values:            []string{},
-				FileValues:        []string{},
-				JSONValues:        []string{},
+				StringValues: []string{},
+				Values:       []string{},
+				FileValues:   []string{},
+				JSONValues:   []string{},
 			},
 			args: args{
 				p: []getter.Provider{},
@@ -175,8 +173,7 @@ func TestOptions_MergeValues(t *testing.T) {
 		{
 			name: "Values-Directories",
 			opts: Options{
-				ValueFiles: []string{},
-				ValuesDirectories: []string{
+				ValueFiles: []string{
 					"testdata/noconflicts/values.d",
 				},
 				StringValues: []string{},
@@ -202,8 +199,7 @@ func TestOptions_MergeValues(t *testing.T) {
 		{
 			name: "Values-Directories-Recursive-Read",
 			opts: Options{
-				ValueFiles: []string{},
-				ValuesDirectories: []string{
+				ValueFiles: []string{
 					"testdata/multilevelvaluesd/values.d",
 				},
 				StringValues: []string{},
@@ -231,8 +227,7 @@ func TestOptions_MergeValues(t *testing.T) {
 		{
 			name: "Values-Using-Set-String",
 			opts: Options{
-				ValueFiles:        []string{},
-				ValuesDirectories: []string{},
+				ValueFiles: []string{},
 				StringValues: []string{
 					fmt.Sprintf("%s=%s,%s=%s", adminKey, adminVal, replicasKey, replicasVal),
 				},
@@ -252,9 +247,8 @@ func TestOptions_MergeValues(t *testing.T) {
 		{
 			name: "Values-Using-Set",
 			opts: Options{
-				ValueFiles:        []string{},
-				ValuesDirectories: []string{},
-				StringValues:      []string{},
+				ValueFiles:   []string{},
+				StringValues: []string{},
 				Values: []string{
 					fmt.Sprintf("%s=%s,%s=%s", areaKey, financeAreaVal, testFlagKey, testFlagVal),
 				},
@@ -273,10 +267,9 @@ func TestOptions_MergeValues(t *testing.T) {
 		{
 			name: "Values-Using-Set-File",
 			opts: Options{
-				ValueFiles:        []string{},
-				ValuesDirectories: []string{},
-				StringValues:      []string{},
-				Values:            []string{},
+				ValueFiles:   []string{},
+				StringValues: []string{},
+				Values:       []string{},
 				FileValues: []string{
 					fmt.Sprintf("%s=%s,%s=%s", environmentKey, "testdata/noconflicts/environment",
 						nodesKey, "testdata/noconflicts/nodes"),
@@ -295,11 +288,10 @@ func TestOptions_MergeValues(t *testing.T) {
 		{
 			name: "Values-Using-Set-JSON",
 			opts: Options{
-				ValueFiles:        []string{},
-				ValuesDirectories: []string{},
-				StringValues:      []string{},
-				Values:            []string{},
-				FileValues:        []string{},
+				ValueFiles:   []string{},
+				StringValues: []string{},
+				Values:       []string{},
+				FileValues:   []string{},
 				JSONValues: []string{
 					fmt.Sprintf("%s={%q:%q,%q:%q},%s={%q:%q,%q:%q}", readKey, minKey,
 						minVal, maxKey, maxVal, writeKey, minKey, minVal, maxKey, maxVal),
@@ -326,8 +318,6 @@ func TestOptions_MergeValues(t *testing.T) {
 				ValueFiles: []string{
 					"testdata/noconflicts/values.yaml",
 					"testdata/noconflicts/extras.yaml",
-				},
-				ValuesDirectories: []string{
 					"testdata/noconflicts/values.d",
 				},
 				StringValues: []string{
@@ -380,11 +370,9 @@ func TestOptions_MergeValues(t *testing.T) {
 			name: "All-Types-of-Inputs-Overwritten-Values",
 			opts: Options{
 				ValueFiles: []string{
+					"testdata/withconflicts/values.d",
 					"testdata/withconflicts/values.yaml",
 					"testdata/withconflicts/extras.yaml",
-				},
-				ValuesDirectories: []string{
-					"testdata/withconflicts/values.d",
 				},
 				StringValues: []string{
 					fmt.Sprintf("%s=%s,%s=%s", adminKey, adminVal, replicasKey, replicasVal),
@@ -438,11 +426,10 @@ func TestOptions_MergeValues(t *testing.T) {
 				ValueFiles: []string{
 					"testdata/noconflicts/values-non-existing.yaml",
 				},
-				ValuesDirectories: []string{},
-				StringValues:      []string{},
-				Values:            []string{},
-				FileValues:        []string{},
-				JSONValues:        []string{},
+				StringValues: []string{},
+				Values:       []string{},
+				FileValues:   []string{},
+				JSONValues:   []string{},
 			},
 			args: args{
 				p: []getter.Provider{},
@@ -453,8 +440,7 @@ func TestOptions_MergeValues(t *testing.T) {
 		{
 			name: "Failure-Values-Directory-Missing",
 			opts: Options{
-				ValueFiles: []string{},
-				ValuesDirectories: []string{
+				ValueFiles: []string{
 					"testdata/noconflicts/values-non-existing.d",
 				},
 				StringValues: []string{},
@@ -474,11 +460,10 @@ func TestOptions_MergeValues(t *testing.T) {
 				ValueFiles: []string{
 					"testdata/malformed/values.yaml",
 				},
-				ValuesDirectories: []string{},
-				StringValues:      []string{},
-				Values:            []string{},
-				FileValues:        []string{},
-				JSONValues:        []string{},
+				StringValues: []string{},
+				Values:       []string{},
+				FileValues:   []string{},
+				JSONValues:   []string{},
 			},
 			args: args{
 				p: []getter.Provider{},
@@ -489,8 +474,7 @@ func TestOptions_MergeValues(t *testing.T) {
 		{
 			name: "Failure-Malformed-YAML-in-Values-Directory",
 			opts: Options{
-				ValueFiles: []string{},
-				ValuesDirectories: []string{
+				ValueFiles: []string{
 					"testdata/malformed/values.d",
 				},
 				StringValues: []string{},
@@ -507,11 +491,10 @@ func TestOptions_MergeValues(t *testing.T) {
 		{
 			name: "Failure-Malformed-JSON",
 			opts: Options{
-				ValueFiles:        []string{},
-				ValuesDirectories: []string{},
-				StringValues:      []string{},
-				Values:            []string{},
-				FileValues:        []string{},
+				ValueFiles:   []string{},
+				StringValues: []string{},
+				Values:       []string{},
+				FileValues:   []string{},
 				JSONValues: []string{
 					fmt.Sprintf("%s={%q:%q,%q:%q,%s={%q:%q,%q:%q}", readKey, minKey,
 						minVal, maxKey, maxVal, writeKey, minKey, minVal, maxKey, maxVal),
@@ -526,9 +509,8 @@ func TestOptions_MergeValues(t *testing.T) {
 		{
 			name: "Failure-Malformed-Set-Input",
 			opts: Options{
-				ValueFiles:        []string{},
-				ValuesDirectories: []string{},
-				StringValues:      []string{},
+				ValueFiles:   []string{},
+				StringValues: []string{},
 				Values: []string{
 					fmt.Sprintf("%s:%s,%s=%s", areaKey, financeAreaVal, testFlagKey, testFlagVal),
 				},
@@ -544,8 +526,7 @@ func TestOptions_MergeValues(t *testing.T) {
 		{
 			name: "Failure-Malformed-String-Input",
 			opts: Options{
-				ValueFiles:        []string{},
-				ValuesDirectories: []string{},
+				ValueFiles: []string{},
 				StringValues: []string{
 					fmt.Sprintf("%s:%s,%s=%s", adminKey, adminVal, replicasKey, replicasVal),
 				},
@@ -562,10 +543,9 @@ func TestOptions_MergeValues(t *testing.T) {
 		{
 			name: "Failure-Set-File-Missing",
 			opts: Options{
-				ValueFiles:        []string{},
-				ValuesDirectories: []string{},
-				StringValues:      []string{},
-				Values:            []string{},
+				ValueFiles:   []string{},
+				StringValues: []string{},
+				Values:       []string{},
 				FileValues: []string{
 					fmt.Sprintf("%s=%s,%s=%s", environmentKey, "testdata/noconflicts/environment-non-existing",
 						nodesKey, "testdata/noconflicts/nodes"),
@@ -581,10 +561,9 @@ func TestOptions_MergeValues(t *testing.T) {
 		{
 			name: "Failure-Malformed-File-String-Input",
 			opts: Options{
-				ValueFiles:        []string{},
-				ValuesDirectories: []string{},
-				StringValues:      []string{},
-				Values:            []string{},
+				ValueFiles:   []string{},
+				StringValues: []string{},
+				Values:       []string{},
 				FileValues: []string{
 					fmt.Sprintf("%s:%s,%s=%s", environmentKey, "testdata/noconflicts/environment",
 						nodesKey, "testdata/noconflicts/nodes"),

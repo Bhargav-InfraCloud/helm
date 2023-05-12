@@ -34,50 +34,48 @@ const yamlExt = `.yaml`
 
 // Options captures the different ways to specify values
 type Options struct {
-	ValueFiles        []string // -f/--values
-	ValuesDirectories []string // -d/--values-directory
-	StringValues      []string // --set-string
-	Values            []string // --set
-	FileValues        []string // --set-file
-	JSONValues        []string // --set-json
+	ValueFiles   []string // -f/--values
+	StringValues []string // --set-string
+	Values       []string // --set
+	FileValues   []string // --set-file
+	JSONValues   []string // --set-json
 }
 
-// MergeValues merges values from files specified via -f/--values, files in directories
-// specified by -d/--values-directory and directly via --set-json, --set, --set-string,
+// MergeValues merges values from files or files in directories specified via -f/--values,
+// and directly via --set-json, --set, --set-string,
 // or --set-file, marshaling them to YAML
 func (opts *Options) MergeValues(p getter.Providers) (map[string]interface{}, error) {
 	base := map[string]interface{}{}
 
-	var valuesFiles []string
+	// User specified a file or directory via -f/--values
+	for _, filePath := range opts.ValueFiles {
+		var err error
 
-	// User specified values directories via -d/--values-directory
-	for _, dir := range opts.ValuesDirectories {
-		// Recursive list of YAML files in input values directory
-		files, err := recursiveListOfFiles(dir, yamlExt)
-		if err != nil {
-			// Error already wrapped
-			return nil, err
-		}
-
-		valuesFiles = append(valuesFiles, files...)
-	}
-
-	// User specified values files via -f/--values
-	valuesFiles = append(valuesFiles, opts.ValueFiles...)
-
-	for _, filePath := range valuesFiles {
-		currentMap := map[string]interface{}{}
-
-		bytes, err := readFile(filePath, p)
+		fileInfo, err := os.Stat(filePath)
 		if err != nil {
 			return nil, err
 		}
 
-		if err := yaml.Unmarshal(bytes, &currentMap); err != nil {
-			return nil, errors.Wrapf(err, "failed to parse %s", filePath)
+		// Check if file is a directory
+		if fileInfo.IsDir() {
+			// Recursive list of YAML files in input values directory
+			filesInDir, err := recursiveListOfFiles(filePath, yamlExt)
+			if err != nil {
+				// Error already wrapped
+				return nil, err
+			}
+			for _, fileInDir := range filesInDir {
+				base, err = mergeValuesFile(base, fileInDir, p)
+				if err != nil {
+					return nil, err
+				}
+			}
+		} else {
+			base, err = mergeValuesFile(base, filePath, p)
+			if err != nil {
+				return nil, err
+			}
 		}
-		// Merge with the previous map
-		base = mergeMaps(base, currentMap)
 	}
 
 	// User specified a value via --set-json
@@ -135,6 +133,22 @@ func mergeMaps(a, b map[string]interface{}) map[string]interface{} {
 		out[k] = v
 	}
 	return out
+}
+
+// mergeFile load and parse a values file and merge its content with the map provided
+func mergeValuesFile(base map[string]interface{}, filePath string, p getter.Providers) (map[string]interface{}, error) {
+	currentMap := map[string]interface{}{}
+
+	bytes, err := readFile(filePath, p)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := yaml.Unmarshal(bytes, &currentMap); err != nil {
+		return nil, errors.Wrapf(err, "failed to parse %s", filePath)
+	}
+	// Merge with the previous map
+	return mergeMaps(base, currentMap), err
 }
 
 // readFile load a file from stdin, the local directory, or a remote file with a url.
