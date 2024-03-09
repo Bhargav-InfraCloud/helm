@@ -37,6 +37,7 @@ var MockManifest = `apiVersion: v1
 kind: Secret
 metadata:
   name: fixture
+  namespace: default
 `
 
 // MockReleaseOptions allows for user-configurable options on mock release objects.

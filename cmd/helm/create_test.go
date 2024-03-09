@@ -36,7 +36,7 @@ func TestCreateCmd(t *testing.T) {
 	defer testChdir(t, dir)()
 
 	// Run a create
-	if _, _, err := executeActionCommand("create " + cname); err != nil {
+	if _, _, err := executeActionCommand("create "+cname, ""); err != nil {
 		t.Fatalf("Failed to run create: %s", err)
 	}
 
@@ -81,7 +81,7 @@ func TestCreateStarterCmd(t *testing.T) {
 	}
 
 	// Run a create
-	if _, _, err := executeActionCommand(fmt.Sprintf("create --starter=starterchart %s", cname)); err != nil {
+	if _, _, err := executeActionCommand(fmt.Sprintf("create --starter=starterchart %s", cname), ""); err != nil {
 		t.Errorf("Failed to run create: %s", err)
 		return
 	}
@@ -149,7 +149,7 @@ func TestCreateStarterAbsoluteCmd(t *testing.T) {
 	starterChartPath := filepath.Join(starterchart, "starterchart")
 
 	// Run a create
-	if _, _, err := executeActionCommand(fmt.Sprintf("create --starter=%s %s", starterChartPath, cname)); err != nil {
+	if _, _, err := executeActionCommand(fmt.Sprintf("create --starter=%s %s", starterChartPath, cname), ""); err != nil {
 		t.Errorf("Failed to run create: %s", err)
 		return
 	}
