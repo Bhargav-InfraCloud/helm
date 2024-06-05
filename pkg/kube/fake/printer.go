@@ -32,7 +32,8 @@ import (
 // PrintingKubeClient implements KubeClient, but simply prints the reader to
 // the given output.
 type PrintingKubeClient struct {
-	Out io.Writer
+	Out       io.Writer
+	Namespace string
 }
 
 // IsReachable checks if the cluster is reachable
@@ -125,6 +126,13 @@ func (p *PrintingKubeClient) DeleteWithPropagationPolicy(resources kube.Resource
 		return nil, []error{err}
 	}
 	return &kube.Result{Deleted: resources}, nil
+}
+
+// GetNamespace returns the namespace set in the client.
+//
+// This is not required by the PrintingKubeClient, but to implement (pkg/kube).Interface
+func (p *PrintingKubeClient) GetNamespace() string {
+	return p.Namespace
 }
 
 func bufferize(resources kube.ResourceList) io.Reader {

@@ -59,7 +59,7 @@ func runTestCmd(t *testing.T, tests []cmdTestCase) {
 					}
 				}
 				t.Logf("running cmd (attempt %d): %s", i+1, tt.cmd)
-				_, out, err := executeActionCommandC(storage, tt.cmd)
+				_, out, err := executeActionCommandC(storage, tt.cmd, tt.namespace)
 				if tt.wantError && err == nil {
 					t.Errorf("expected error, got success with the following output:\n%s", out)
 				}
@@ -78,11 +78,11 @@ func storageFixture() *storage.Storage {
 	return storage.Init(driver.NewMemory())
 }
 
-func executeActionCommandC(store *storage.Storage, cmd string) (*cobra.Command, string, error) {
-	return executeActionCommandStdinC(store, nil, cmd)
+func executeActionCommandC(store *storage.Storage, cmd, ns string) (*cobra.Command, string, error) {
+	return executeActionCommandStdinC(store, nil, cmd, ns)
 }
 
-func executeActionCommandStdinC(store *storage.Storage, in *os.File, cmd string) (*cobra.Command, string, error) {
+func executeActionCommandStdinC(store *storage.Storage, in *os.File, cmd, ns string) (*cobra.Command, string, error) {
 	args, err := shellwords.Parse(cmd)
 	if err != nil {
 		return nil, "", err
@@ -91,10 +91,14 @@ func executeActionCommandStdinC(store *storage.Storage, in *os.File, cmd string)
 	buf := new(bytes.Buffer)
 
 	actionConfig := &action.Configuration{
-		Releases:     store,
-		KubeClient:   &kubefake.PrintingKubeClient{Out: io.Discard},
-		Capabilities: chartutil.DefaultCapabilities,
-		Log:          func(format string, v ...interface{}) {},
+		Releases: store,
+		KubeClient: &kubefake.PrintingKubeClient{
+			Out:       io.Discard,
+			Namespace: ns,
+		},
+		Capabilities:     chartutil.DefaultCapabilities,
+		Log:              func(format string, v ...interface{}) {},
+		RESTClientGetter: settings.RESTClientGetter(),
 	}
 
 	root, err := newRootCmd(actionConfig, buf, args)
@@ -135,10 +139,12 @@ type cmdTestCase struct {
 	// Number of repeats (in case a feature was previously flaky and the test checks
 	// it's now stably producing identical results). 0 means test is run exactly once.
 	repeat int
+	// namespace is the default namespace set in kube client
+	namespace string
 }
 
-func executeActionCommand(cmd string) (*cobra.Command, string, error) {
-	return executeActionCommandC(storageFixture(), cmd)
+func executeActionCommand(cmd, ns string) (*cobra.Command, string, error) {
+	return executeActionCommandC(storageFixture(), cmd, ns)
 }
 
 func resetEnv() func() {
