@@ -1,0 +1,2 @@
+NAMESPACE	NAME           	API_VERSION	AGE
+default  	secrets/fixture	v1         	0s 

@@ -29,6 +29,8 @@ import (
 //
 // A KubernetesClient must be concurrency safe.
 type Interface interface {
+	Get(resources ResourceList, related bool) (map[string][]runtime.Object, error)
+
 	// Create creates one or more resources.
 	Create(resources ResourceList) (*Result, error)
 
@@ -70,6 +72,10 @@ type Interface interface {
 
 	// IsReachable checks whether the client is able to connect to the cluster.
 	IsReachable() error
+
+	// GetNamespace returns the namespace set in the client (in kube config).
+	// Or if that is missing, it returns "default"
+	GetNamespace() string
 }
 
 // InterfaceExt is introduced to avoid breaking backwards compatibility for Interface implementers.

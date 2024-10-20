@@ -233,10 +233,17 @@ func (cfg *Configuration) renderResources(ch *chart.Chart, values chartutil.Valu
 }
 
 // RESTClientGetter gets the rest client
+//
+//go:generate go run go.uber.org/mock/mockgen -source=action.go -destination=mocks/action.go -package=mocks
 type RESTClientGetter interface {
 	ToRESTConfig() (*rest.Config, error)
 	ToDiscoveryClient() (discovery.CachedDiscoveryInterface, error)
 	ToRESTMapper() (meta.RESTMapper, error)
+}
+
+// RESTMapper is meta.RESTMapper
+type RESTMapper interface {
+	meta.RESTMapper
 }
 
 // DebugLog sets the logger that writes debug strings

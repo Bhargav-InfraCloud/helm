@@ -27,9 +27,14 @@ import (
 
 	shellwords "github.com/mattn/go-shellwords"
 	"github.com/spf13/cobra"
+	"go.uber.org/mock/gomock"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/rest"
 
 	"helm.sh/helm/v3/internal/test"
 	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/action/mocks"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/cli"
 	kubefake "helm.sh/helm/v3/pkg/kube/fake"
@@ -46,6 +51,34 @@ func init() {
 }
 
 func runTestCmd(t *testing.T, tests []cmdTestCase) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockRESTClientGetter := mocks.NewMockRESTClientGetter(mockCtrl)
+	mockRESTMapper := mocks.NewMockRESTMapper(mockCtrl)
+
+	// dynamicClient := fake.NewSimpleDynamicClient(apiruntime.NewScheme())
+
+	mockRESTClientGetter.EXPECT().ToRESTConfig().Return(&rest.Config{
+		Host: settings.KubeAPIServer,
+	}, nil)
+	mockRESTClientGetter.EXPECT().ToRESTMapper().Return(mockRESTMapper, nil)
+	mockRESTMapper.EXPECT().RESTMapping(schema.GroupKind{
+		Group: "",
+		Kind:  "Secret",
+	}, "v1").Return(&meta.RESTMapping{
+		Resource: schema.GroupVersionResource{
+			Group:    "",
+			Version:  "",
+			Resource: "",
+		},
+		GroupVersionKind: schema.GroupVersionKind{
+			Group:   "",
+			Version: "",
+			Kind:    "",
+		},
+		Scope: nil,
+	}, nil)
+
 	t.Helper()
 	for _, tt := range tests {
 		for i := 0; i <= tt.repeat; i++ {
@@ -59,7 +92,7 @@ func runTestCmd(t *testing.T, tests []cmdTestCase) {
 					}
 				}
 				t.Logf("running cmd (attempt %d): %s", i+1, tt.cmd)
-				_, out, err := executeActionCommandC(storage, tt.cmd)
+				_, out, err := executeActionCommandC(storage, tt.cmd, mockRESTClientGetter)
 				if tt.wantError && err == nil {
 					t.Errorf("expected error, got success with the following output:\n%s", out)
 				}
@@ -78,11 +111,11 @@ func storageFixture() *storage.Storage {
 	return storage.Init(driver.NewMemory())
 }
 
-func executeActionCommandC(store *storage.Storage, cmd string) (*cobra.Command, string, error) {
-	return executeActionCommandStdinC(store, nil, cmd)
+func executeActionCommandC(store *storage.Storage, cmd string, rcg action.RESTClientGetter) (*cobra.Command, string, error) {
+	return executeActionCommandStdinC(store, nil, cmd, rcg)
 }
 
-func executeActionCommandStdinC(store *storage.Storage, in *os.File, cmd string) (*cobra.Command, string, error) {
+func executeActionCommandStdinC(store *storage.Storage, in *os.File, cmd string, rcg action.RESTClientGetter) (*cobra.Command, string, error) {
 	args, err := shellwords.Parse(cmd)
 	if err != nil {
 		return nil, "", err
@@ -91,10 +124,11 @@ func executeActionCommandStdinC(store *storage.Storage, in *os.File, cmd string)
 	buf := new(bytes.Buffer)
 
 	actionConfig := &action.Configuration{
-		Releases:     store,
-		KubeClient:   &kubefake.PrintingKubeClient{Out: io.Discard},
-		Capabilities: chartutil.DefaultCapabilities,
-		Log:          func(_ string, _ ...interface{}) {},
+		RESTClientGetter: rcg,
+		Releases:         store,
+		KubeClient:       &kubefake.PrintingKubeClient{Out: io.Discard},
+		Capabilities:     chartutil.DefaultCapabilities,
+		Log:              func(_ string, _ ...interface{}) {},
 	}
 
 	root, err := newRootCmd(actionConfig, buf, args)
@@ -138,7 +172,7 @@ type cmdTestCase struct {
 }
 
 func executeActionCommand(cmd string) (*cobra.Command, string, error) {
-	return executeActionCommandC(storageFixture(), cmd)
+	return executeActionCommandC(storageFixture(), cmd, nil)
 }
 
 func resetEnv() func() {
