@@ -1,0 +1,4 @@
+# This will be ignored anyway.
+ship:
+  name: "Moby Dick"
+  status: "Active"
