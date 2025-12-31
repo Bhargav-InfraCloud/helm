@@ -15,7 +15,9 @@ limitations under the License.
 
 package common
 
-import "time"
+import (
+	"time"
+)
 
 // File represents a file as a name/value pair.
 //
@@ -29,3 +31,25 @@ type File struct {
 	// ModTime is the file's mod-time
 	ModTime time.Time `json:"modtime,omitzero"`
 }
+
+// // DeepCopy creates a deep copy of the File object.
+// func (f *File) DeepCopy() *File {
+// 	// If the file is nil, return nil.
+// 	if f == nil {
+// 		return nil
+// 	}
+
+// 	// Create a shallow copy of the file.
+// 	//
+// 	// This is enough to copy the following fields:
+// 	// - Name (string)
+// 	// - ModTime (time.Time)
+// 	//
+// 	// For the other field, i.e., Data, a deep copy is needed.
+// 	newFile := *f
+
+// 	// Deep copy the Data (byte slice).
+// 	newFile.Data = bytes.Clone(f.Data)
+
+// 	return &newFile
+// }

@@ -49,6 +49,41 @@ type Dependency struct {
 	Alias string `json:"alias,omitempty" yaml:"alias,omitempty"`
 }
 
+// // DeepCopy creates a deep copy of the Dependency object.
+// func (d *Dependency) DeepCopy() *Dependency {
+// 	// If the dependency is nil, return nil.
+// 	if d == nil {
+// 		return nil
+// 	}
+
+// 	// Create a shallow copy of the dependency.
+// 	//
+// 	// This is enough to copy the following fields:
+// 	// - Name (string)
+// 	// - Version (string)
+// 	// - Repository (string)
+// 	// - Condition (string)
+// 	// - Enabled (bool)
+// 	// - Alias (string)
+// 	//
+// 	// For the other fields, i.e., Tags and ImportValues, a deep copy is needed.
+// 	newDep := *d
+
+// 	// Deep copy Tags (string slice).
+// 	if d.Tags != nil {
+// 		newDep.Tags = make([]string, len(d.Tags))
+// 		copy(newDep.Tags, d.Tags)
+// 	}
+
+// 	// Deep copy ImportValues (any slice).
+// 	if d.ImportValues != nil {
+// 		newDep.ImportValues = make([]any, len(d.ImportValues))
+// 		copy(newDep.ImportValues, d.ImportValues)
+// 	}
+
+// 	return &newDep
+// }
+
 // Validate checks for common problems with the dependency datastructure in
 // the chart. This check must be done at load time before the dependency's charts are
 // loaded.
@@ -72,11 +107,40 @@ func (d *Dependency) Validate() error {
 // Lock is a lock file for dependencies.
 //
 // It represents the state that the dependencies should be in.
+//
+// +k8s:deepcopy-gen=true
 type Lock struct {
 	// Generated is the date the lock file was last generated.
+	// +k8s:deepcopy-gen=copy-value
 	Generated time.Time `json:"generated"`
 	// Digest is a hash of the dependencies in Chart.yaml.
 	Digest string `json:"digest"`
 	// Dependencies is the list of dependencies that this lock file has locked.
 	Dependencies []*Dependency `json:"dependencies"`
 }
+
+// func (l *Lock) DeepCopy() *Lock {
+// 	// If the lock is nil, return nil.
+// 	if l == nil {
+// 		return nil
+// 	}
+
+// 	// Create a shallow copy of the lock.
+// 	//
+// 	// This is enough to copy the following fields:
+// 	// - Generated (time.Time)
+// 	// - Digest (string)
+// 	//
+// 	// For the other field, i.e., Dependencies, a deep copy is needed.
+// 	newLock := *l
+
+// 	// Deep copy Dependencies (slice of pointers to struct Dependency).
+// 	if l.Dependencies != nil {
+// 		newLock.Dependencies = make([]*Dependency, len(l.Dependencies))
+// 		for i, dep := range l.Dependencies {
+// 			newLock.Dependencies[i] = dep.DeepCopy()
+// 		}
+// 	}
+
+// 	return &newLock
+// }

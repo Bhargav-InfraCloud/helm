@@ -23,6 +23,7 @@ import (
 	"os"
 	"path/filepath"
 	"syscall"
+	"time"
 
 	"github.com/Masterminds/semver/v3"
 	"golang.org/x/term"
@@ -58,6 +59,9 @@ type Package struct {
 	KeyFile               string
 	CaFile                string
 	InsecureSkipTLSVerify bool
+
+	// ModTimeOverride to override all modification times in chart archives.
+	ModTimeOverride time.Time
 }
 
 const (
@@ -120,6 +124,10 @@ func (p *Package) Run(path string, _ map[string]interface{}) (string, error) {
 		// Otherwise save to set destination
 		dest = p.Destination
 	}
+
+	// Override the modification times (in both chart and its dependencies) for reproducible builds, if ModTimeOverride
+	// is set.
+	p.overrideAllModTimesInChart(ch)
 
 	name, err := chartutil.Save(ch, dest)
 	if err != nil {
@@ -239,6 +247,49 @@ func (p *Package) passphraseFileFetcher(passphraseFile string, stdin *os.File) (
 	return func(_ string) ([]byte, error) {
 		return p.cachedPassphrase, nil
 	}, nil
+}
+
+// overrideAllModTimesInChart overrides all modification times in the given chart and its dependencies to the provided
+// time. The chart (and its dependencies) is modified in-place.
+func (p *Package) overrideAllModTimesInChart(ch *chart.Chart) {
+	// If the chart is nil or ModTimeOverride is zero, skip overriding the modification times in chart and its
+	// dependencies.
+	if ch == nil || p.ModTimeOverride.IsZero() {
+		return
+	}
+
+	// Inline function to override all modification times in the given chart.
+	overrideAllModTimesInChart := func(ch *chart.Chart, override time.Time) {
+		// Override the chart modification time.
+		ch.ModTime = override
+
+		// Override the schema modification time for the chart.
+		ch.SchemaModTime = override
+
+		// Override the modification time for all files in the chart.
+		for i := range ch.Files {
+			ch.Files[i].ModTime = override
+		}
+
+		// Override the modification time for all the raw files in the chart.
+		for i := range ch.Raw {
+			ch.Raw[i].ModTime = override
+		}
+
+		// Override the modification time for all files in the templates.
+		for i := range ch.Templates {
+			ch.Templates[i].ModTime = override
+		}
+	}
+
+	// Override the chart modification times.
+	overrideAllModTimesInChart(ch, p.ModTimeOverride)
+
+	// Override the modification times for all dependencies.
+	chartDependencies := ch.Dependencies()
+	for _, dep := range chartDependencies {
+		overrideAllModTimesInChart(dep, p.ModTimeOverride)
+	}
 }
 
 func openPassphraseFile(passphraseFile string, stdin *os.File) (*os.File, error) {

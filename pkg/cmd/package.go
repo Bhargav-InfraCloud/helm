@@ -81,6 +81,11 @@ func newPackageCmd(out io.Writer) *cobra.Command {
 				return fmt.Errorf("missing registry client: %w", err)
 			}
 
+			// If SourceDateEpoch is set, use it for overriding all modification times in chart archives.
+			if !settings.SourceDateEpoch.IsZero() {
+				client.ModTimeOverride = settings.SourceDateEpoch
+			}
+
 			for i := range args {
 				path, err := filepath.Abs(args[i])
 				if err != nil {

@@ -20,10 +20,14 @@ import (
 	"os"
 	"path"
 	"testing"
+	"time"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/stretchr/testify/assert"
 
 	"helm.sh/helm/v4/internal/test/ensure"
+	"helm.sh/helm/v4/pkg/chart/common"
+	chart "helm.sh/helm/v4/pkg/chart/v2"
 )
 
 func TestPassphraseFileFetcher(t *testing.T) {
@@ -148,6 +152,252 @@ func TestValidateVersion(t *testing.T) {
 					t.Errorf("Expected {%v}, got {%v}", tt.wantErr, err)
 				}
 
+			}
+		})
+	}
+}
+
+func TestOverrideAllModTimesInChart(t *testing.T) {
+	// Chart fields.
+	//
+	// Note: This is a simplified version of `chart.Chart` for the current tests, with pointers removed to avoid shared
+	// state between test cases.
+	type chartFields struct {
+		metadata      chart.Metadata
+		raw           []common.File
+		templates     []common.File
+		schemaModTime time.Time
+		files         []common.File
+		modTime       time.Time
+		dependencies  []chartFields
+	}
+
+	var (
+		// Modification times.
+		modTime  = time.Date(2023, 5, 1, 12, 0, 0, 0, time.UTC)
+		override = time.Date(2024, 6, 1, 12, 0, 0, 0, time.UTC)
+
+		// Common files used in charts and dependencies.
+		valuesFile = common.File{
+			Name:    "values.yaml",
+			ModTime: modTime,
+		}
+		readmeFile = common.File{
+			Name:    "README.md",
+			ModTime: modTime,
+		}
+		allFiles = []common.File{
+			valuesFile,
+			readmeFile,
+		}
+
+		// Test dependency charts.
+		dep1 = chartFields{
+			raw:           allFiles,
+			templates:     allFiles,
+			schemaModTime: modTime,
+			files:         allFiles,
+			modTime:       modTime,
+		}
+		dep2 = chartFields{
+			raw:           allFiles,
+			templates:     allFiles,
+			schemaModTime: modTime,
+			files:         allFiles,
+			modTime:       modTime,
+		}
+
+		// Test chart metadata.
+		metadata = chart.Metadata{
+			Name:    "mychart",
+			Version: "1.0.0",
+		}
+	)
+
+	// Test cases.
+	tests := []struct {
+		name        string
+		chartFields *chartFields
+		override    time.Time
+	}{
+		{
+			name: "override chart modification times",
+			chartFields: &chartFields{
+				metadata:      metadata,
+				dependencies:  []chartFields{},
+				raw:           allFiles,
+				templates:     allFiles,
+				schemaModTime: modTime,
+				files:         allFiles,
+				modTime:       modTime,
+			},
+			override: override,
+		},
+		{
+			name: "override chart and dependencies modification times",
+			chartFields: &chartFields{
+				metadata: metadata,
+				dependencies: []chartFields{
+					dep1,
+					dep2,
+				},
+				raw:           allFiles,
+				templates:     allFiles,
+				schemaModTime: modTime,
+				files:         allFiles,
+				modTime:       modTime,
+			},
+			override: override,
+		},
+		{
+			name: "no override any modification times when override time is zero",
+			chartFields: &chartFields{
+				metadata: metadata,
+				dependencies: []chartFields{
+					dep1,
+					dep2,
+				},
+				raw:           allFiles,
+				templates:     allFiles,
+				schemaModTime: modTime,
+				files:         allFiles,
+				modTime:       modTime,
+			},
+			override: time.Time{},
+		},
+		{
+			name:        "skip override when chart is nil",
+			chartFields: nil,
+			override:    override,
+		},
+	}
+
+	// Run test cases.
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var testChart *chart.Chart
+			var dependencies []*chart.Chart
+			if tt.chartFields != nil {
+				// Create files with pointers for using in `chart.Chart` instance.
+				files := make([]*common.File, len(tt.chartFields.files))
+				for i := range tt.chartFields.files {
+					// Create a copy of file to get a unique pointer to avoid shared state between test cases.
+					file := tt.chartFields.files[i]
+					files[i] = &file
+				}
+
+				// Create raw files with pointers for using in `chart.Chart` instance.
+				rawFiles := make([]*common.File, len(tt.chartFields.raw))
+				for i := range tt.chartFields.raw {
+					// Create a copy of raw file to get a unique pointer to avoid shared state between test cases.
+					rawFile := tt.chartFields.raw[i]
+					rawFiles[i] = &rawFile
+				}
+
+				// Create template files with pointers for using in `chart.Chart` instance.
+				templateFiles := make([]*common.File, len(tt.chartFields.templates))
+				for i := range tt.chartFields.templates {
+					// Create a copy of template file to get a unique pointer to avoid shared state between test cases.
+					templateFile := tt.chartFields.templates[i]
+					templateFiles[i] = &templateFile
+				}
+
+				// Create the `chart.Chart` instance.
+				testChart = &chart.Chart{
+					Metadata:      &tt.chartFields.metadata,
+					Files:         files,
+					SchemaModTime: modTime,
+					Raw:           rawFiles,
+					Templates:     templateFiles,
+					Values: map[string]any{
+						"replicaCount": 1,
+					},
+					ModTime: modTime,
+				}
+
+				// Create dependency charts to add to the `chart.Chart` instance.
+				dependencies = make([]*chart.Chart, len(tt.chartFields.dependencies))
+				for i := range tt.chartFields.dependencies {
+					// Create files with pointers for using in current dependency chart.
+					files := make([]*common.File, len(tt.chartFields.dependencies[i].files))
+					for j := range tt.chartFields.dependencies[i].files {
+						// Create a copy of file to get a unique pointer to avoid shared state between test cases.
+						file := tt.chartFields.dependencies[i].files[j]
+						files[j] = &file
+					}
+
+					// Create raw files with pointers for using in current dependency chart.
+					rawFiles := make([]*common.File, len(tt.chartFields.dependencies[i].raw))
+					for j := range tt.chartFields.dependencies[i].raw {
+						// Create a copy of raw file to get a unique pointer to avoid shared state between test cases.
+						rawFile := tt.chartFields.dependencies[i].raw[j]
+						rawFiles[j] = &rawFile
+					}
+
+					// Create template files with pointers for using in current dependency chart.
+					templateFiles := make([]*common.File, len(tt.chartFields.dependencies[i].templates))
+					for j := range tt.chartFields.dependencies[i].templates {
+						// Create a copy of template file to get a unique pointer to avoid shared state between test
+						// cases.
+						templateFile := tt.chartFields.dependencies[i].templates[j]
+						templateFiles[j] = &templateFile
+					}
+
+					// Create the dependency `chart.Chart` instance.
+					dependencies[i] = &chart.Chart{
+						Metadata:      &tt.chartFields.dependencies[i].metadata,
+						Files:         files,
+						SchemaModTime: tt.chartFields.dependencies[i].schemaModTime,
+						Raw:           rawFiles,
+						Templates:     templateFiles,
+						ModTime:       tt.chartFields.dependencies[i].modTime,
+					}
+				}
+
+				// Add dependencies to the chart.
+				testChart.AddDependency(dependencies...)
+			}
+
+			// Initialize Package action and override modification times in chart and its dependencies.
+			packageCommand := NewPackage()
+			packageCommand.ModTimeOverride = tt.override
+			packageCommand.overrideAllModTimesInChart(testChart)
+
+			// Determine expected modification time for the current test case.
+			expectedModTime := modTime
+			if !tt.override.IsZero() {
+				expectedModTime = tt.override
+			}
+
+			// Assertions.
+			if testChart != nil {
+				// Assertions on chart modification times.
+				assert.Equal(t, expectedModTime, testChart.ModTime)
+				assert.Equal(t, expectedModTime, testChart.SchemaModTime)
+				for _, file := range testChart.Files {
+					assert.Equal(t, expectedModTime, file.ModTime)
+				}
+				for _, file := range testChart.Raw {
+					assert.Equal(t, expectedModTime, file.ModTime)
+				}
+				for _, file := range testChart.Templates {
+					assert.Equal(t, expectedModTime, file.ModTime)
+				}
+
+				// Assertions on chart dependencies modification times.
+				for _, dep := range dependencies {
+					assert.Equal(t, expectedModTime, dep.ModTime)
+					assert.Equal(t, expectedModTime, dep.SchemaModTime)
+					for _, file := range dep.Files {
+						assert.Equal(t, expectedModTime, file.ModTime)
+					}
+					for _, file := range dep.Raw {
+						assert.Equal(t, expectedModTime, file.ModTime)
+					}
+					for _, file := range dep.Templates {
+						assert.Equal(t, expectedModTime, file.ModTime)
+					}
+				}
 			}
 		})
 	}

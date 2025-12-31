@@ -176,6 +176,132 @@ func (ch *Chart) CRDObjects() []CRD {
 	return crds
 }
 
+// // DeepCopy creates a deep copy of the chart.
+// func (ch *Chart) DeepCopy() *Chart {
+// 	// If the chart is nil, return nil.
+// 	if ch == nil {
+// 		return nil
+// 	}
+
+// 	// Create a shallow copy of the chart.
+// 	//
+// 	// This is enough to copy the following fields:
+// 	// - SchemaModTime (time.Time)
+// 	// - ModTime (time.Time)
+// 	//
+// 	// For the other fields, i.e., Metadata, Lock, Raw, Templates, Files, Schema, Values, dependencies, and parent, a
+// 	// deep copy is needed.
+// 	newChart := *ch
+
+// 	// Deep copy Metadata (pointer to struct Metadata).
+// 	if ch.Metadata != nil {
+// 		metadata := *ch.Metadata
+// 		newChart.Metadata = &metadata
+// 	}
+
+// 	// Deep copy Lock (pointer to struct Lock).
+// 	if ch.Lock != nil {
+// 		newChart.Lock = ch.Lock.DeepCopy()
+// 	}
+
+// 	// Deep copy raw files (slice of pointers to struct File).
+// 	if ch.Raw != nil {
+// 		newChart.Raw = make([]*common.File, len(ch.Raw))
+// 		for i, rawFile := range ch.Raw {
+// 			if rawFile != nil {
+// 				newChart.Raw[i] = rawFile.DeepCopy()
+// 			}
+// 		}
+// 	}
+
+// 	// Deep copy template files (slice of pointers to struct File).
+// 	if ch.Templates != nil {
+// 		newChart.Templates = make([]*common.File, len(ch.Templates))
+// 		for i, templateFile := range ch.Templates {
+// 			if templateFile != nil {
+// 				newChart.Templates[i] = templateFile.DeepCopy()
+// 			}
+// 		}
+// 	}
+
+// 	// Deep copy files (slice of pointers to struct File).
+// 	if ch.Files != nil {
+// 		newChart.Files = make([]*common.File, len(ch.Files))
+// 		for i, file := range ch.Files {
+// 			if file != nil {
+// 				newChart.Files[i] = file.DeepCopy()
+// 			}
+// 		}
+// 	}
+
+// 	// Deep copy Schema (byte slice).
+// 	if ch.Schema != nil {
+// 		// Clone the Data (byte slice) to avoid sharing underlying array.
+// 		newChart.Schema = bytes.Clone(ch.Schema)
+// 	}
+
+// 	// Deep copy Values (map[string]any).
+// 	newChart.Values = deepCopyValues(ch.Values)
+
+// 	// Deep copy dependencies (slice of pointers to struct Chart).
+// 	if ch.dependencies != nil {
+// 		newChart.dependencies = make([]*Chart, len(ch.dependencies))
+// 		for i, depChart := range ch.dependencies {
+// 			newChart.dependencies[i] = depChart.DeepCopy()
+
+// 			// Set the parent of the dependency chart to the new chart, i.e., to the deep-copied chart.
+// 			if newChart.dependencies[i] != nil {
+// 				newChart.dependencies[i].parent = &newChart
+// 			}
+// 		}
+// 	}
+
+// 	// Deep copy parent (pointer to struct Chart).
+// 	if ch.parent != nil {
+// 		newChart.parent = ch.parent.DeepCopy()
+// 	}
+
+// 	return &newChart
+// }
+
+// // deepCopyValues creates a deep copy of a map[string]any.
+// func deepCopyValues(valuesMap map[string]any) map[string]any {
+// 	// If the input map is nil, return nil.
+// 	if valuesMap == nil {
+// 		return nil
+// 	}
+
+// 	// Create a new map with the same length.
+// 	copiedValuesMap := make(map[string]any, len(valuesMap))
+
+// 	// Deep copy each key-value pair.
+// 	for k, v := range valuesMap {
+// 		copiedValuesMap[k] = deepCopyValue(v)
+// 	}
+
+// 	return copiedValuesMap
+// }
+
+// // deepCopyValue creates a deep copy of any value.
+// func deepCopyValue(value any) any {
+// 	switch valueType := value.(type) {
+// 	case map[string]any:
+// 		// For maps, recursively call deepCopyValues to deep copy it.
+// 		return deepCopyValues(valueType)
+// 	case []any:
+// 		// For slices, deep copy each element.
+// 		copiedSlice := make([]any, len(valueType))
+// 		for i := range valueType {
+// 			copiedSlice[i] = deepCopyValue(valueType[i])
+// 		}
+
+// 		return copiedSlice
+// 	default:
+// 		// For primitive types, return the value as is.
+// 		return valueType
+// 	}
+// }
+
 func hasManifestExtension(fname string) bool {
 	ext := filepath.Ext(fname)
 	return strings.EqualFold(ext, ".yaml") || strings.EqualFold(ext, ".yml") || strings.EqualFold(ext, ".json")

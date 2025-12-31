@@ -29,6 +29,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/spf13/pflag"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -93,6 +94,15 @@ type EnvSettings struct {
 	ColorMode string
 	// ContentCache is the location where cached charts are stored
 	ContentCache string
+	// SourceDateEpoch is the env SOURCE_DATE_EPOCH value to override all modification times in chart archives for
+	// reproducible builds.
+	//
+	// If env SOURCE_DATE_EPOCH is not set, this will be zero value, i.e., SourceDateEpoch.IsZero() == true, which
+	// indicates that no override is needed.
+	//
+	// SOURCE_DATE_EPOCH is a standardized environment variable. For more information, see:
+	// https://reproducible-builds.org/docs/source-date-epoch/
+	SourceDateEpoch time.Time
 }
 
 func New() *EnvSettings {
@@ -117,6 +127,28 @@ func New() *EnvSettings {
 		ColorMode:                 envColorMode(),
 	}
 	env.Debug, _ = strconv.ParseBool(os.Getenv("HELM_DEBUG"))
+
+	// Parse the SourceDateEpoch.
+	sourceDateEpoch := os.Getenv("SOURCE_DATE_EPOCH")
+	if sourceDateEpoch == "" {
+		// If SOURCE_DATE_EPOCH is not set, use zero time. This indicates that no override is needed for the chart's
+		// modification times.
+		env.SourceDateEpoch = time.Time{}
+	} else {
+		// If SOURCE_DATE_EPOCH is set, parse its value and use it to override modification times.
+		//
+		// Parse SOURCE_DATE_EPOCH's value as an integer (i.e., base 10, and 64 bits).
+		sourceDateEpochUnix, err := strconv.ParseInt(sourceDateEpoch, 10, 64)
+		if err != nil {
+			// If parsing SOURCE_DATE_EPOCH's value fails, fall back to the current time.
+			//
+			// TODO :: Bhargav-InfraCloud :: Should we return an error instead of falling back? Or log a warning?
+			env.SourceDateEpoch = time.Now()
+		} else {
+			// If parsing SOURCE_DATE_EPOCH's value succeeds, convert it to time object.
+			env.SourceDateEpoch = time.Unix(sourceDateEpochUnix, 0)
+		}
+	}
 
 	// bind to kubernetes config flags
 	config := &genericclioptions.ConfigFlags{

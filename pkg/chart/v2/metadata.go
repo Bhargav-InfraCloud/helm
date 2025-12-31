@@ -44,6 +44,21 @@ func (m *Maintainer) Validate() error {
 	return nil
 }
 
+// // DeepCopy creates a deep copy of the Maintainer.
+// func (m *Maintainer) DeepCopy() *Maintainer {
+// 	// If the maintainer is nil, return nil.
+// 	if m == nil {
+// 		return nil
+// 	}
+
+// 	// Create a shallow copy of the maintainer.
+// 	//
+// 	// Note: All fields are strings, so a shallow copy is sufficient.
+// 	newMaintainer := *m
+
+// 	return &newMaintainer
+// }
+
 // Metadata for a Chart file. This models the structure of a Chart.yaml file.
 type Metadata struct {
 	// The name of the chart. Required.
@@ -150,6 +165,73 @@ func (md *Metadata) Validate() error {
 	}
 	return nil
 }
+
+// // DeepCopy creates a deep copy of the Metadata.
+// func (m *Metadata) DeepCopy() *Metadata {
+// 	// If the metadata is nil, return nil.
+// 	if m == nil {
+// 		return nil
+// 	}
+
+// 	// Create a shallow copy of the metadata.
+// 	//
+// 	// This is enough to copy the following fields:
+// 	// - Name (string)
+// 	// - Home (string)
+// 	// - Version (string)
+// 	// - Description (string)
+// 	// - Icon (string)
+// 	// - APIVersion (string)
+// 	// - Condition (string)
+// 	// - Tags (string)
+// 	// - AppVersion (string)
+// 	// - Deprecated (bool)
+// 	// - KubeVersion (string)
+// 	// - Type (string)
+// 	//
+// 	// For the other fields, i.e., Sources, Keywords, Maintainers, Annotations, and Dependencies, a deep copy is needed.
+// 	newMeta := *m
+
+// 	// Deep copy Sources (string slice).
+// 	if m.Sources != nil {
+// 		newMeta.Sources = make([]string, len(m.Sources))
+// 		copy(newMeta.Sources, m.Sources)
+// 	}
+
+// 	// Deep copy Keywords (string slice).
+// 	if m.Keywords != nil {
+// 		newMeta.Keywords = make([]string, len(m.Keywords))
+// 		copy(newMeta.Keywords, m.Keywords)
+// 	}
+
+// 	// Deep copy Maintainers (Maintainer slice).
+// 	if m.Maintainers != nil {
+// 		newMeta.Maintainers = make([]*Maintainer, len(m.Maintainers))
+// 		for i, maintainer := range m.Maintainers {
+// 			if maintainer != nil {
+// 				newMeta.Maintainers[i] = maintainer.DeepCopy()
+// 			}
+// 		}
+// 	}
+
+// 	// Deep copy Annotations (map[string]string).
+// 	if m.Annotations != nil {
+// 		newMeta.Annotations = make(map[string]string, len(m.Annotations))
+// 		maps.Copy(newMeta.Annotations, m.Annotations)
+// 	}
+
+// 	// Deep copy Dependencies (Dependency slice).
+// 	if m.Dependencies != nil {
+// 		newMeta.Dependencies = make([]*Dependency, len(m.Dependencies))
+// 		for i, dependency := range m.Dependencies {
+// 			if dependency != nil {
+// 				newMeta.Dependencies[i] = dependency.DeepCopy()
+// 			}
+// 		}
+// 	}
+
+// 	return &newMeta
+// }
 
 func isValidChartType(in string) bool {
 	switch in {
