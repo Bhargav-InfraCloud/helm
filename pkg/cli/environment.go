@@ -130,6 +130,7 @@ func New() *EnvSettings {
 
 	// Parse the SourceDateEpoch.
 	sourceDateEpoch := os.Getenv("SOURCE_DATE_EPOCH")
+	fmt.Println("SOURCE_DATE_EPOCH", sourceDateEpoch)
 	if sourceDateEpoch == "" {
 		// If SOURCE_DATE_EPOCH is not set, use zero time. This indicates that no override is needed for the chart's
 		// modification times.

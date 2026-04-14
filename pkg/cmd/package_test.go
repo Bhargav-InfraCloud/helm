@@ -16,7 +16,11 @@ limitations under the License.
 package cmd
 
 import (
+	"archive/tar"
+	"bytes"
+	"compress/gzip"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -164,6 +168,161 @@ func TestPackage(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestPackage2(t *testing.T) {
+	tests := []struct {
+		name    string
+		flags   map[string]string
+		args    []string
+		expect  string
+		hasfile string
+		err     bool
+	}{
+		{
+			name:    "package testdata/testcharts/alpine",
+			args:    []string{"testdata/testcharts/alpine"},
+			expect:  "",
+			hasfile: "alpine-0.1.0.tgz",
+		},
+	}
+
+	// origDir, err := os.Getwd()
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// t.Chdir(t.TempDir())
+			// ensure.HelmHome(t)
+
+			// if err := os.MkdirAll("toot", 0o777); err != nil {
+			// 	t.Fatal(err)
+			// }
+
+			// // This is an unfortunate byproduct of the tmpdir
+			// if v, ok := tt.flags["keyring"]; ok && len(v) > 0 {
+			// 	tt.flags["keyring"] = filepath.Join(origDir, v)
+			// }
+
+			// adjustedArgs := make([]string, len(tt.args))
+			// for i, f := range tt.args {
+			// 	adjustedArgs[i] = filepath.Join(origDir, f)
+			// }
+
+			// cmd := []string{"package"}
+			// if len(adjustedArgs) > 0 {
+			// 	cmd = append(cmd, adjustedArgs...)
+			// }
+			// for k, v := range tt.flags {
+			// 	if v != "0" {
+			// 		cmd = append(cmd, fmt.Sprintf("--%s=%s", k, v))
+			// 	}
+			// }
+
+			// args, err := shellwords.Parse(strings.Join(cmd, " "))
+			// assert.NoError(t, err)
+
+			// buf := new(bytes.Buffer)
+			// store := storageFixture()
+
+			// actionConfig := &action.Configuration{
+			// 	Releases:     store,
+			// 	KubeClient:   &kubefake.PrintingKubeClient{Out: io.Discard},
+			// 	Capabilities: common.DefaultCapabilities,
+			// }
+
+			// root, err := newRootCmdWithConfig(actionConfig, buf, args, SetupLogging)
+			// assert.NoError(t, err)
+
+			// root.SetOut(buf)
+			// root.SetErr(buf)
+			// root.SetArgs(args)
+
+			// oldStdin := os.Stdin
+			// defer func() {
+			// 	os.Stdin = oldStdin
+			// }()
+
+			// if mem, ok := store.Driver.(*driver.Memory); ok {
+			// 	mem.SetNamespace(settings.Namespace())
+			// }
+			// _, err = root.ExecuteC()
+			// assert.NoError(t, err)
+
+			// if len(tt.hasfile) > 0 {
+			// 	if fi, err := os.Stat(tt.hasfile); err != nil {
+			// 		t.Errorf("%q: expected file %q, got err %q", tt.name, tt.hasfile, err)
+			// 	} else if fi.Size() == 0 {
+			// 		t.Errorf("%q: file %q has zero bytes.", tt.name, tt.hasfile)
+			// 	} else {
+			// 		// assert.Equal(t, time.Unix(1767302906, 0), fi.ModTime())
+			// 		fmt.Println(fi.Name(), ListTGZFiles(fi.Name()))
+			// 	}
+			// }
+
+			// if v, ok := tt.flags["sign"]; ok && v == "1" {
+			// 	if fi, err := os.Stat(tt.hasfile + ".prov"); err != nil {
+			// 		t.Errorf("%q: expected provenance file", tt.name)
+			// 	} else if fi.Size() == 0 {
+			// 		t.Errorf("%q: provenance file is empty", tt.name)
+			// 	}
+			// }
+
+			t.Setenv("SOURCE_DATE_EPOCH", "1767439774")
+
+			buf := new(bytes.Buffer)
+			cmd := newPackageCmd(buf)
+			args := []string{"testdata/testcharts/alpine"}
+			cmd.SetArgs(args)
+
+			err := cmd.Execute()
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if len(tt.hasfile) > 0 {
+				if fi, err := os.Stat(tt.hasfile); err != nil {
+					t.Errorf("%q: expected file %q, got err %q", tt.name, tt.hasfile, err)
+				} else if fi.Size() == 0 {
+					t.Errorf("%q: file %q has zero bytes.", tt.name, tt.hasfile)
+				} else {
+					// assert.Equal(t, time.Unix(1767302906, 0), fi.ModTime())
+					fmt.Println(fi.Name(), ListTGZFiles(fi.Name()))
+				}
+			}
+		})
+	}
+}
+
+func ListTGZFiles(path string) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	gz, err := gzip.NewReader(f)
+	if err != nil {
+		return err
+	}
+	defer gz.Close()
+
+	tr := tar.NewReader(gz)
+
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break // end of archive
+		}
+		if err != nil {
+			return err
+		}
+
+		fmt.Println(hdr.Name, hdr.ModTime)
+	}
+	return nil
 }
 
 func TestSetAppVersion(t *testing.T) {
